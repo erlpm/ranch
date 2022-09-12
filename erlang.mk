@@ -4565,7 +4565,7 @@ define dep_autopatch2
 		$(call erlang,$(call dep_autopatch_appsrc_script.erl,$(1))); \
 	fi; \
 	$(call erlang,$(call dep_autopatch_appsrc.erl,$(1))); \
-	if [ -f $(DEPS_DIR)/$(1)/rebar -o -f $(DEPS_DIR)/$(1)/rebar.config -o -f $(DEPS_DIR)/$(1)/rebar.config.script -o -f $(DEPS_DIR)/$1/rebar.lock ]; then \
+	if [ -f $(DEPS_DIR)/$(1)/epm -o -f $(DEPS_DIR)/$(1)/epm.rel -o -f $(DEPS_DIR)/$(1)/epm.rel.script -o -f $(DEPS_DIR)/$1/epm.lock ]; then \
 		$(call dep_autopatch_fetch_rebar); \
 		$(call dep_autopatch_rebar,$(1)); \
 	else \
@@ -4632,19 +4632,19 @@ define dep_autopatch_rebar.erl
 	application:load(rebar),
 	application:set_env(rebar, log_level, debug),
 	rmemo:start(),
-	Conf1 = case file:consult("$(call core_native_path,$(DEPS_DIR)/$1/rebar.config)") of
+	Conf1 = case file:consult("$(call core_native_path,$(DEPS_DIR)/$1/epm.rel)") of
 		{ok, Conf0} -> Conf0;
 		_ -> []
 	end,
 	{Conf, OsEnv} = fun() ->
-		case filelib:is_file("$(call core_native_path,$(DEPS_DIR)/$1/rebar.config.script)") of
+		case filelib:is_file("$(call core_native_path,$(DEPS_DIR)/$1/epm.rel.script)") of
 			false -> {Conf1, []};
 			true ->
 				Bindings0 = erl_eval:new_bindings(),
 				Bindings1 = erl_eval:add_binding('CONFIG', Conf1, Bindings0),
-				Bindings = erl_eval:add_binding('SCRIPT', "$(call core_native_path,$(DEPS_DIR)/$1/rebar.config.script)", Bindings1),
+				Bindings = erl_eval:add_binding('SCRIPT', "$(call core_native_path,$(DEPS_DIR)/$1/epm.rel.script)", Bindings1),
 				Before = os:getenv(),
-				{ok, Conf2} = file:script("$(call core_native_path,$(DEPS_DIR)/$1/rebar.config.script)", Bindings),
+				{ok, Conf2} = file:script("$(call core_native_path,$(DEPS_DIR)/$1/epm.rel.script)", Bindings),
 				{Conf2, lists:foldl(fun(E, Acc) -> lists:delete(E, Acc) end, os:getenv(), Before)}
 		end
 	end(),
@@ -5621,7 +5621,7 @@ endif
 # Copyright (c) 2015-2016, Loïc Hoguin <essen@ninenines.eu>
 # This file is part of erlang.mk and subject to the terms of the ISC License.
 
-.PHONY: rebar.config
+.PHONY: epm.rel
 
 # We strip out -Werror because we don't want to fail due to
 # warnings when used as a dependency.
@@ -5648,8 +5648,8 @@ $(call comma_list,$(foreach d,$(DEPS),\
 {erl_opts, $(call compat_erlc_opts_to_list,$(ERLC_OPTS))}.
 endef
 
-rebar.config:
-	$(gen_verbose) $(call core_render,compat_rebar_config,rebar.config)
+epm.rel:
+	$(gen_verbose) $(call core_render,compat_rebar_config,epm.rel)
 
 # Copyright (c) 2015-2016, Loïc Hoguin <essen@ninenines.eu>
 # This file is part of erlang.mk and subject to the terms of the ISC License.
@@ -7101,12 +7101,12 @@ HEX_TARBALL_FILES ?= \
 	$(wildcard plugins.mk) \
 	$(sort $(call core_find,priv/,*)) \
 	$(wildcard README*) \
-	$(wildcard rebar.config) \
+	$(wildcard epm.rel) \
 	$(sort $(call core_find,src/,*))
 
 HEX_TARBALL_OUTPUT_FILE ?= $(ERLANG_MK_TMP)/$(PROJECT).tar
 
-# @todo Need to check for rebar.config and/or the absence of DEPS to know
+# @todo Need to check for epm.rel and/or the absence of DEPS to know
 # whether a project will work with Rebar.
 #
 # @todo contributors licenses links in HEX_TARBALL_EXTRA_METADATA
