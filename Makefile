@@ -1,37 +1,38 @@
-.PHONY:all get-deps compile compile-deps compile-all clean clean-deps clean-all test test-deps test-all help
+.PHONY:all compile clean test build-plt dialyzer help
+
+# app name
+App_Name = ranch
 
 # 读取上级配制（可选）。没上级时可以注释
--include ./../../bash/makefile_config.mk
-ifdef Path_Epm
-	EPM = $(Path_Root_MF)/../../$(Path_Epm)
-endif
-APP_NAME = ranch
--include ./../../bash/project_include.mk
+include ./../../bash/makefile_config.mk
+Ebin=$(Root_Ebin)/deps/${App_Name}
+Etest=$(Root_Etest)/deps/${App_Name}
 
 # 入口
 all:compile
 
 # 编译
 compile:
-	@mkdir -p $(EBIN__DEPS_DIR)
-	@mkdir -p $(ETEST_DEPS_DIR)
-	@$(ERL) -pa $(EBIN__DEPS_DIR) -noshell -make -j 10
-	@cp -r $(Path_Root_MF)/src/$(APP_NAME).app.src $(EBIN__DEPS_DIR)/$(APP_NAME).app
-	@echo ">>\033[32m 编译$(APP_NAME) 完成 \033[0m "
-	@#$(EPM) -C $(ROOT)/epm.config compile
+	@mkdir -p $(Ebin)
+	@mkdir -p $(Etest)
+	@$(Erlc) -pa $(Ebin) -o $(Ebin) -I $(Root_Curr)/include $(Root_Curr)/src/ranch_protocol.erl
+	@$(Erl) -pa $(Ebin) -noshell -make -j 10
+	@cp -r $(Root_Curr)/src/$(App_Name).app.src $(Ebin)/$(App_Name).app
+	@echo ">>\033[32m 编译$(App_Name) 完成 \033[0m "
+	@#$(Epm) -C $(Root)/epm.config compile
 
 # 清理
 clean:
-	@rm -rf $(EBIN__DEPS_DIR)/*.beam
-	@rm -rf $(ETEST_DEPS_DIR)/*.beam
-	@rm -rf $(EBIN__DEPS_DIR)/*.app
+	@rm -rf $(Ebin)/*.beam
+	@rm -rf $(Ebin)/*.app
+	@rm -rf $(Etest)/*.beam
 	@rm -rf erl_crash.dump
-	@echo ">>\033[91m 清理$(APP_NAME) 完成 \033[0m "
-	@#$(EPM) clean
+	@echo ">>\033[91m 清理$(App_Name) 完成 \033[0m "
+	@#$(Epm) clean
 
 # 测试
 test:
-	@echo ">>\033[91m 测试$(APP_NAME) 完成(暂) \033[0m "
-	@#$(EPM) -C epm.test.config eunit skip_deps=true
+	@echo ">>\033[91m 测试$(App_Name) 完成(暂) \033[0m "
+	@#$(Epm) -C epm.test.config eunit skip_deps=true
 
-include $(Path_Root_MF)/../../bash/project_help.mk
+include $(Root)/bash/project_help.mk

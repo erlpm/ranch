@@ -10,7 +10,7 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, Opts) ->
 	SniHost = case ranch:handshake(Ref) of
-		%% Due to a bug in ssl (https://bugs.erlang.org/browse/ERL-951,
+		%% Due to a bug in ssl (https://bugs.erlang.org/browse/Erl-951,
 		%% fixed in OTP 22.0.3) the value for sni may be {sni, Hostname}
 		%% instead of Hostname.
 		{continue, #{sni := {sni, Hostname}}} ->
